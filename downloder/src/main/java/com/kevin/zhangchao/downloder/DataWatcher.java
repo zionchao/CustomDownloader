@@ -13,7 +13,6 @@ public abstract class DataWatcher implements Observer {
         if (data instanceof DownloadEntry){
             notifyUpdate((DownloadEntry)data);
         }
-
     }
 
     public abstract void notifyUpdate(DownloadEntry data);

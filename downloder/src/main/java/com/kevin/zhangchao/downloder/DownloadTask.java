@@ -11,6 +11,13 @@ import java.util.concurrent.ExecutorService;
 
 /**
  * Created by zhangchao_a on 2017/5/12.
+ *
+ * 1.check if support range, get content-length
+ * 2.if not, single thread to download. can't be paused|resumed
+ * 3.if support, multiple threads to download
+ * 3.1 compute the block size per thread
+ * 3.2 execute sub-threads
+ * 3.3 combine the progress and notify
  */
 
 public class DownloadTask implements ConnectThread.ConnectListener, DownloadThread.DownloadListener {
@@ -26,6 +33,7 @@ public class DownloadTask implements ConnectThread.ConnectListener, DownloadThre
 
     private DownloadThread[] mDownloadThreads;
     private int tmpDivide;
+    private long mLastStamp;
 
     public DownloadTask(DownloadEntry entry, Handler mHandler, ExecutorService pExecutorService) {
         this.entry=entry;
@@ -156,19 +164,25 @@ public class DownloadTask implements ConnectThread.ConnectListener, DownloadThre
             entry.ranges.put(index,range);
         }
         entry.currentLength+=progress;
-        if (entry.totalLength>0){
-            int percent= (int) (entry.currentLength*100l/entry.totalLength);
-            if(percent>entry.percent){
-                entry.percent=percent;
-                notifyUpdate(entry,DownloadService.NOTIFY_UPDATING);
-            }
-        }else{
-            int divide=entry.currentLength/(50*1024);
-            if (divide>tmpDivide){
-                tmpDivide=divide;
-                notifyUpdate(entry,DownloadService.NOTIFY_UPDATING);
-            }
+        long stamp=System.currentTimeMillis();
+        //防止数据刷新太快，数据混乱
+        if (stamp-mLastStamp>1000){
+            mLastStamp=stamp;
+            notifyUpdate(entry,DownloadService.NOTIFY_UPDATING);
         }
+//        if (entry.totalLength>0){
+//            int percent= (int) (entry.currentLength*100l/entry.totalLength);
+//            if(percent>entry.percent){
+//                entry.percent=percent;
+//                notifyUpdate(entry,DownloadService.NOTIFY_UPDATING);
+//            }
+//        }else{
+//            int divide=entry.currentLength/(50*1024);
+//            if (divide>tmpDivide){
+//                tmpDivide=divide;
+//                notifyUpdate(entry,DownloadService.NOTIFY_UPDATING);
+//            }
+//        }
     }
 
     @Override

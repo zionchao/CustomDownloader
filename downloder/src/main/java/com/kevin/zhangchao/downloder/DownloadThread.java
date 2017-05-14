@@ -84,40 +84,47 @@ public class DownloadThread implements Runnable{
                     if (isError||isCancelled||isPaused)
                         break;
                     fos.write(buffer);
-                    listener.onProgressChanged(0,len);
+                    synchronized (listener){
+                        listener.onProgressChanged(0,len);
+                    }
                 }
                 fos.close();
                 is.close();
             }else{
-                mStatus= DownloadEntry.DownloadStatus.error;
-                listener.onDownloadError(index,"server error:"+responseCode);
+                synchronized (listener){
+                    mStatus= DownloadEntry.DownloadStatus.error;
+                    listener.onDownloadError(index,"server error:"+responseCode);
+                }
                 return ;
             }
-            if (isPaused){
-                mStatus= DownloadEntry.DownloadStatus.paused;
-                listener.onDownloadPaused(index);
-            }else if(isCancelled){
-                mStatus= DownloadEntry.DownloadStatus.cancel;
-                listener.onDownloadCancelled(index);
-            }else if(isError){
-                mStatus= DownloadEntry.DownloadStatus.error;
-                listener.onDownloadError(index,"cancel manually by error");
-            }else{
-                mStatus= DownloadEntry.DownloadStatus.completed;
-                listener.onDownloadCompleted(index);
+            synchronized (listener){
+                if (isPaused){
+                    mStatus= DownloadEntry.DownloadStatus.paused;
+                    listener.onDownloadPaused(index);
+                }else if(isCancelled){
+                    mStatus= DownloadEntry.DownloadStatus.cancel;
+                    listener.onDownloadCancelled(index);
+                }else if(isError){
+                    mStatus= DownloadEntry.DownloadStatus.error;
+                    listener.onDownloadError(index,"cancel manually by error");
+                }else{
+                    mStatus= DownloadEntry.DownloadStatus.completed;
+                    listener.onDownloadCompleted(index);
+                }
             }
-
         } catch (IOException e) {
             e.printStackTrace();
-            if (isPaused) {
-                mStatus = DownloadEntry.DownloadStatus.paused;
-                listener.onDownloadPaused(index);
-            } else if (isCancelled) {
-                mStatus = DownloadEntry.DownloadStatus.cancel;
-                listener.onDownloadCancelled(index);
-            } else {
-                mStatus = DownloadEntry.DownloadStatus.error;
-                listener.onDownloadError(index,e.getMessage());
+            synchronized (listener){
+                if (isPaused) {
+                    mStatus = DownloadEntry.DownloadStatus.paused;
+                    listener.onDownloadPaused(index);
+                } else if (isCancelled) {
+                    mStatus = DownloadEntry.DownloadStatus.cancel;
+                    listener.onDownloadCancelled(index);
+                } else {
+                    mStatus = DownloadEntry.DownloadStatus.error;
+                    listener.onDownloadError(index,e.getMessage());
+                }
             }
         }finally {
             if (connection!=null){

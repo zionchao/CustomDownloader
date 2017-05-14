@@ -1,4 +1,6 @@
-package com.kevin.zhangchao.downloder;
+package com.kevin.zhangchao.downloder.notify;
+
+import com.kevin.zhangchao.downloder.entity.DownloadEntry;
 
 import java.util.Observable;
 import java.util.Observer;

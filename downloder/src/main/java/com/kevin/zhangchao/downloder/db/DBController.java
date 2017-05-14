@@ -1,9 +1,11 @@
-package com.kevin.zhangchao.downloder;
+package com.kevin.zhangchao.downloder.db;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
 
 import com.j256.ormlite.dao.Dao;
+import com.kevin.zhangchao.downloder.entity.DownloadEntry;
+import com.kevin.zhangchao.downloder.utils.Trace;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -60,4 +62,13 @@ public class DBController {
         }
     }
 
+    public void deleteById(String id) {
+        Dao<DownloadEntry,String> dao;
+        try {
+            dao=mDBhelper.getDao(DownloadEntry.class);
+            dao.deleteById(id);
+        } catch (SQLException e) {
+            e.printStackTrace();
+        }
+    }
 }

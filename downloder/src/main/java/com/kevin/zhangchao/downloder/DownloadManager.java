@@ -3,6 +3,14 @@ package com.kevin.zhangchao.downloder;
 import android.content.Context;
 import android.content.Intent;
 
+import com.kevin.zhangchao.downloder.core.DownloadService;
+import com.kevin.zhangchao.downloder.utils.Constants;
+import com.kevin.zhangchao.downloder.notify.DataChanger;
+import com.kevin.zhangchao.downloder.notify.DataWatcher;
+import com.kevin.zhangchao.downloder.entity.DownloadEntry;
+
+import java.io.File;
+
 /**
  * Created by zhangchao_a on 2017/5/12.
  */
@@ -99,6 +107,19 @@ public class DownloadManager {
 
     public DownloadEntry queryDownloadEntry(String id){
         return DataChanger.getInstance(context).queryDownloadEntry(id);
+    }
+
+    public boolean containsDownloadEntry(String id){
+        return DataChanger.getInstance(context).containsEntry(id);
+    }
+
+    public void deleteDownloadEntry(boolean forceDelete,String id){
+        DataChanger.getInstance(context).deleteDownloadEntry(id);
+        if (forceDelete){
+            File file=DownloadConfig.getConfig().getDownloadFile(id);
+            if (file.exists())
+                file.delete();
+        }
     }
 
 }

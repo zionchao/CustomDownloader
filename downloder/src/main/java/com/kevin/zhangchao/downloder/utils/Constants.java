@@ -1,4 +1,4 @@
-package com.kevin.zhangchao.downloder;
+package com.kevin.zhangchao.downloder.utils;
 
 /**
  * Created by zhangchao_a on 2017/5/12.

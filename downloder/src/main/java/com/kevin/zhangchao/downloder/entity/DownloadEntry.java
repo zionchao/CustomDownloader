@@ -1,9 +1,13 @@
-package com.kevin.zhangchao.downloder;
+package com.kevin.zhangchao.downloder.entity;
+
+import android.os.Environment;
 
 import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
+import com.kevin.zhangchao.downloder.DownloadConfig;
 
+import java.io.File;
 import java.io.Serializable;
 import java.util.HashMap;
 
@@ -26,7 +30,7 @@ public class DownloadEntry implements Serializable{
     @DatabaseField
     public int totalLength;
     @DatabaseField
-    public boolean isSupportRange;
+    public boolean isSupportRange=false;
     @DatabaseField(dataType = DataType.SERIALIZABLE)
     public HashMap<Integer,Integer> ranges;
     @DatabaseField
@@ -47,6 +51,9 @@ public class DownloadEntry implements Serializable{
         this.percent=0;
         this.currentLength=0;
         this.ranges=null;
+        File file = DownloadConfig.getConfig().getDownloadFile(url);
+        if (file.exists())
+            file.delete();
     }
 
 

@@ -1,6 +1,9 @@
-package com.kevin.zhangchao.downloder;
+package com.kevin.zhangchao.downloder.notify;
 
 import android.content.Context;
+
+import com.kevin.zhangchao.downloder.db.DBController;
+import com.kevin.zhangchao.downloder.entity.DownloadEntry;
 
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -61,5 +64,10 @@ public class DataChanger extends Observable {
 
     public boolean containsEntry(String id){
         return mOperatedEntries.containsKey(id);
+    }
+
+    public void deleteDownloadEntry(String id) {
+        mOperatedEntries.remove(id);
+        DBController.getInstance(context).deleteById(id);
     }
 }

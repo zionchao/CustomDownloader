@@ -1,12 +1,16 @@
-package com.kevin.zhangchao.downloder;
+package com.kevin.zhangchao.downloder.core;
 
 import android.os.Environment;
 import android.os.Handler;
 import android.os.Message;
 
+import com.kevin.zhangchao.downloder.DownloadConfig;
+import com.kevin.zhangchao.downloder.utils.Constants;
+import com.kevin.zhangchao.downloder.entity.DownloadEntry;
+import com.kevin.zhangchao.downloder.utils.Trace;
+
 import java.io.File;
 import java.util.HashMap;
-import java.util.concurrent.Executor;
 import java.util.concurrent.ExecutorService;
 
 /**
@@ -24,6 +28,7 @@ public class DownloadTask implements ConnectThread.ConnectListener, DownloadThre
 
     private final Handler mHandler;
     private final ExecutorService mExecutorService;
+    private final File destFile;
     private DownloadEntry entry;
 
     //TODO read volatile explain
@@ -39,6 +44,7 @@ public class DownloadTask implements ConnectThread.ConnectListener, DownloadThre
         this.entry=entry;
         this.mHandler=mHandler;
         this.mExecutorService=pExecutorService;
+        this.destFile= DownloadConfig.getConfig().getDownloadFile(entry.url);
     }
 
     public void start() {
@@ -105,7 +111,7 @@ public class DownloadTask implements ConnectThread.ConnectListener, DownloadThre
     private void startMutiDownload() {
         entry.status= DownloadEntry.DownloadStatus.downloading;
         notifyUpdate(entry,DownloadService.NOTIFY_DOWNLOADING);
-        int block=entry.totalLength/Constants.MAX_DOWNLOAD_THREADS;
+        int block=entry.totalLength/ Constants.MAX_DOWNLOAD_THREADS;
         int startPos=0;
         int endPos=0;
         //第一次进来,断点信息为0
@@ -124,7 +130,7 @@ public class DownloadTask implements ConnectThread.ConnectListener, DownloadThre
                 endPos=(i+1)*block-1;
             }
             if (startPos<endPos){
-                mDownloadThreads[i]=new DownloadThread(entry.url,i,startPos,endPos,this);
+                mDownloadThreads[i]=new DownloadThread(entry.url,destFile,i,startPos,endPos,this);
                 mExecutorService.execute(mDownloadThreads[i]);
             }
         }
@@ -134,7 +140,7 @@ public class DownloadTask implements ConnectThread.ConnectListener, DownloadThre
         entry.status= DownloadEntry.DownloadStatus.downloading;
         notifyUpdate(entry,DownloadService.NOTIFY_DOWNLOADING);
         mDownloadThreads=new DownloadThread[1];
-        mDownloadThreads[0]=new DownloadThread(entry.url,0,0,0,this);
+        mDownloadThreads[0]=new DownloadThread(entry.url,destFile,0,0,0,this);
         mExecutorService.execute(mDownloadThreads[0]);
     }
 
@@ -197,11 +203,7 @@ public class DownloadTask implements ConnectThread.ConnectListener, DownloadThre
 
         if (entry.totalLength>0&&entry.currentLength!=entry.totalLength){
             entry.reset();
-            String path = Environment.getExternalStorageDirectory() + File.separator +
-                    "rmp" + File.separator + entry.url.substring(entry.url.lastIndexOf("/") + 1);
-            File file = new File(path);
-            if (file.exists())
-                file.delete();
+
             entry.status = DownloadEntry.DownloadStatus.error;
             notifyUpdate(entry, DownloadService.NOTIFY_ERROR);
         }else{

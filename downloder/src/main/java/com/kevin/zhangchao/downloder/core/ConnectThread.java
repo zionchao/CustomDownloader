@@ -1,4 +1,6 @@
-package com.kevin.zhangchao.downloder;
+package com.kevin.zhangchao.downloder.core;
+
+import com.kevin.zhangchao.downloder.utils.Constants;
 
 import java.io.IOException;
 import java.net.HttpURLConnection;

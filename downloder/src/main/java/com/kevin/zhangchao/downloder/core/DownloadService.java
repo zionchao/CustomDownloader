@@ -1,4 +1,4 @@
-package com.kevin.zhangchao.downloder;
+package com.kevin.zhangchao.downloder.core;
 
 import android.app.Service;
 import android.content.Intent;
@@ -7,13 +7,18 @@ import android.os.IBinder;
 import android.os.Message;
 import android.support.annotation.Nullable;
 
+import com.kevin.zhangchao.downloder.DownloadConfig;
+import com.kevin.zhangchao.downloder.utils.Constants;
+import com.kevin.zhangchao.downloder.db.DBController;
+import com.kevin.zhangchao.downloder.notify.DataChanger;
+import com.kevin.zhangchao.downloder.entity.DownloadEntry;
+
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.LinkedBlockingDeque;
-import java.util.logging.LogRecord;
 
 /**
  * Created by zhangchao_a on 2017/5/12.
@@ -44,7 +49,7 @@ public class DownloadService extends Service {
                 case NOTIFY_PAUSED_OR_CANCELLED:
                 case NOTIFY_COMPLETED:
                 case NOTIFY_ERROR:
-                    checkNext();
+                    checkNext((DownloadEntry) msg.obj);
                     break;
 
             }
@@ -60,13 +65,31 @@ public class DownloadService extends Service {
         super.onCreate();
         mExecutorService= Executors.newCachedThreadPool();
         mDBController=DBController.getInstance(getApplicationContext());
+        initDownload();
+    }
+
+    private void initDownload() {
         ArrayList<DownloadEntry> mDownloadEntries=mDBController.queryAll();
         if (mDBController!=null){
             for (DownloadEntry entry:mDownloadEntries)
             {
-                if (entry.status== DownloadEntry.DownloadStatus.downloading){
-                    entry.status= DownloadEntry.DownloadStatus.paused;
-                    addDownload(entry);
+                if (entry.status== DownloadEntry.DownloadStatus.downloading||entry.status== DownloadEntry.DownloadStatus.wating){
+                  if (DownloadConfig.getConfig().isRecoverDownloadWhenStart()){
+                      if (entry.isSupportRange){
+                          entry.status= DownloadEntry.DownloadStatus.paused;
+                      }else{
+                          entry.status= DownloadEntry.DownloadStatus.idle;
+                          entry.reset();
+                      }
+                      addDownload(entry);
+                  }else{
+                      if (entry.isSupportRange){
+                          entry.status= DownloadEntry.DownloadStatus.paused;
+                      }else{
+                          entry.status= DownloadEntry.DownloadStatus.idle;
+                          entry.reset();
+                      }
+                  }
                 }
                 DataChanger.getInstance(getApplicationContext()).addToOperatedEntryMap(entry.id,entry);
             }
@@ -87,7 +110,8 @@ public class DownloadService extends Service {
         return super.onStartCommand(intent, flags, startId);
     }
 
-    private void checkNext() {
+    private void checkNext(DownloadEntry entry) {
+        mDownloadingTasks.remove(entry);
         DownloadEntry newEntry=mWaitingQueue.poll();
         if (newEntry!=null){
             startDownload(newEntry);
@@ -118,7 +142,7 @@ public class DownloadService extends Service {
     }
 
     private void addDownload(DownloadEntry entry){
-        if (mDownloadingTasks.size()>=Constants.KEY_DOWNLOAD_MAX_COUNT){
+        if (mDownloadingTasks.size()>=DownloadConfig.getConfig().getMaxDownloadTasks()){
             mWaitingQueue.offer(entry);
             entry.status= DownloadEntry.DownloadStatus.wating;
             DataChanger.getInstance(getApplicationContext()).postStatus(entry);

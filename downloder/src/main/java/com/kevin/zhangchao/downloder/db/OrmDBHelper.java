@@ -1,4 +1,4 @@
-package com.kevin.zhangchao.downloder;
+package com.kevin.zhangchao.downloder.db;
 
 import android.content.Context;
 import android.database.sqlite.SQLiteDatabase;
@@ -6,6 +6,7 @@ import android.database.sqlite.SQLiteDatabase;
 import com.j256.ormlite.android.apptools.OrmLiteSqliteOpenHelper;
 import com.j256.ormlite.support.ConnectionSource;
 import com.j256.ormlite.table.TableUtils;
+import com.kevin.zhangchao.downloder.entity.DownloadEntry;
 
 import java.sql.SQLException;
 

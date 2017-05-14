@@ -18,13 +18,18 @@ public class MainActivity extends AppCompatActivity {
 
     private DownloadManager mDownloadManager;
 
+    private DownloadEntry entry;
+
     public DataWatcher watcher=new DataWatcher() {
         @Override
         public void notifyUpdate(DownloadEntry data) {
+            entry=data;
+//            if (entry.status== DownloadEntry.DownloadStatus.cancel){
+//                entry=null;
+//            }
             Trace.e(data.toString());
         }
     };
-    private DownloadEntry entry;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -36,19 +41,25 @@ public class MainActivity extends AppCompatActivity {
 
     @OnClick({R.id.mDownloadBtn,R.id.btnResume,R.id.btnPause})
     public void testDownload(Button view){
+        if(entry==null){
+            entry = new DownloadEntry("http://gdown.baidu.com/data/wisegame/8fe54eabc0905223/aiqiyi_80860.apk");
+        }
         switch (view.getId()){
             case R.id.mDownloadBtn:
-                entry = new DownloadEntry();
-                entry.name = "test.jpg";
-                entry.url = "http://api.stay4it.com/uploads/test.jpg";
-                entry.id = "1";
                 mDownloadManager.add(entry);
                 break;
             case R.id.btnResume:
-                mDownloadManager.resume(entry);
+//                mDownloadManager.resume(entry);
+                mDownloadManager.cancle(entry);
                 break;
             case R.id.btnPause:
-                mDownloadManager.pause(entry);
+                if (entry.status== DownloadEntry.DownloadStatus.downloading)
+                {
+                    mDownloadManager.pause(entry);
+                }else if(entry.status== DownloadEntry.DownloadStatus.paused){
+                    mDownloadManager.resume(entry);
+                }
+
                 break;
         }
     }

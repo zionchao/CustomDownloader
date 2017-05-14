@@ -37,7 +37,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="13dp"
-        android:text="恢复"
+        android:text="取消"
         app:layout_constraintLeft_toLeftOf="@+id/btnPause"
         app:layout_constraintRight_toRightOf="@+id/btnPause"
         app:layout_constraintTop_toBottomOf="@+id/btnPause"

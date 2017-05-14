@@ -28,7 +28,7 @@ public class DownloadEntry implements Serializable{
     @DatabaseField
     public boolean isSupportRange;
     @DatabaseField(dataType = DataType.SERIALIZABLE)
-    public HashMap<Integer,String> ranges;
+    public HashMap<Integer,Integer> ranges;
     @DatabaseField
     public int percent;
 
@@ -43,9 +43,15 @@ public class DownloadEntry implements Serializable{
         this.status=DownloadStatus.idle;
     }
 
+    public void reset() {
+        this.percent=0;
+        this.currentLength=0;
+        this.ranges=null;
+    }
+
 
     public enum DownloadStatus{
-        wating,downloading,paused,resume,cancel,completed,idle
+        wating,downloading,connecting,paused,resume,cancel,completed,idle,error
     }
 
     @Override

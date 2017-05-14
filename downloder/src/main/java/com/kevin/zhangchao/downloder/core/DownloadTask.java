@@ -37,6 +37,7 @@ public class DownloadTask implements ConnectThread.ConnectListener, DownloadThre
     private ConnectThread mConnectThread;
 
     private DownloadThread[] mDownloadThreads;
+    private int[] mRetryTimes;
     private int tmpDivide;
     private long mLastStamp;
 
@@ -48,7 +49,7 @@ public class DownloadTask implements ConnectThread.ConnectListener, DownloadThre
     }
 
     public void start() {
-        if (entry.isSupportRange){
+        if (entry.totalLength>0){
             startDownload();
         }else{
             entry.status= DownloadEntry.DownloadStatus.connecting;
@@ -122,6 +123,7 @@ public class DownloadTask implements ConnectThread.ConnectListener, DownloadThre
             }
         }
         mDownloadThreads=new DownloadThread[Constants.MAX_DOWNLOAD_THREADS];
+        mRetryTimes=new int[Constants.MAX_DOWNLOAD_THREADS];
         for(int i=0;i<Constants.MAX_DOWNLOAD_THREADS;i++){
             startPos=i*block+entry.ranges.get(i);
             if (i==Constants.MAX_DOWNLOAD_THREADS-1){
@@ -176,19 +178,6 @@ public class DownloadTask implements ConnectThread.ConnectListener, DownloadThre
             mLastStamp=stamp;
             notifyUpdate(entry,DownloadService.NOTIFY_UPDATING);
         }
-//        if (entry.totalLength>0){
-//            int percent= (int) (entry.currentLength*100l/entry.totalLength);
-//            if(percent>entry.percent){
-//                entry.percent=percent;
-//                notifyUpdate(entry,DownloadService.NOTIFY_UPDATING);
-//            }
-//        }else{
-//            int divide=entry.currentLength/(50*1024);
-//            if (divide>tmpDivide){
-//                tmpDivide=divide;
-//                notifyUpdate(entry,DownloadService.NOTIFY_UPDATING);
-//            }
-//        }
     }
 
     @Override
@@ -214,6 +203,25 @@ public class DownloadTask implements ConnectThread.ConnectListener, DownloadThre
 
     @Override
     public synchronized void onDownloadError(int index,String message) {
+        if (mRetryTimes[index]<DownloadConfig.getConfig().getMaxRetryCount()){
+            int startPos=0;
+            int endPos=0;
+            if (entry.isSupportRange){
+                startPos=entry.ranges.get(index);
+                if (index==Constants.MAX_DOWNLOAD_THREADS-1){
+                    endPos=entry.totalLength;
+                }else{
+                    int block=entry.totalLength/ Constants.MAX_DOWNLOAD_THREADS;
+                    endPos=(index+1)*block-1;
+                }
+            }else{
+                entry.reset();
+            }
+            mRetryTimes[index]++;
+            mDownloadThreads[index]=new DownloadThread(entry.url,destFile,index,startPos,endPos,this);
+            mExecutorService.execute(mDownloadThreads[index]);
+            return;
+        }
         boolean isAllError=true;
         for (int i=0;i<mDownloadThreads.length;i++){
             if (mDownloadThreads[i]!=null){
